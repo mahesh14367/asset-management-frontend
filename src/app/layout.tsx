@@ -20,7 +20,7 @@ const plexMono = IBM_Plex_Mono({
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
-      <body>
+      <body className="bg-background">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

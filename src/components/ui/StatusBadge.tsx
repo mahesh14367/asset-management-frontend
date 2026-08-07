@@ -6,7 +6,7 @@
 // lifecycle state appears: table rows, detail pages, kanban cards.
 
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils'; // shadcn's default clsx+tailwind-merge helper
+import { cn } from '../../lib/utils'; // shadcn's default clsx+tailwind-merge helper
 
 const statusBadge = cva(
   'inline-flex items-center gap-1.5 rounded-sm border-l-[3px] px-2 py-0.5 text-xs font-medium font-data',
