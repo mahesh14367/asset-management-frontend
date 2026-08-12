@@ -22,9 +22,7 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
-      // For demo purposes, still allow login if API fails
-      setAccessToken('mock_token_' + Date.now());
-      router.push('/dashboard');
+      // Show error message to user (you can add error state and display it)
     }
   };
   return (

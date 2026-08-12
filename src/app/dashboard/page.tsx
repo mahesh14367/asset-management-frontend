@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Package, Users, TrendingUp, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Package, Users, TrendingUp, Loader2, Cpu, FileText, CheckCircle } from 'lucide-react';
 import { dashboardApi, DashboardStats } from '../../api/dashboard';
 
 export default function DashboardPage() {
@@ -34,21 +34,33 @@ export default function DashboardPage() {
       icon: Package,
     },
     {
-      name: 'Active Employees',
-      value: stats.employees.active.toLocaleString(),
-      change: '+5.2%',
-      icon: Users,
+      name: 'Hardware',
+      value: stats.assets.hardware.toLocaleString(),
+      change: '+8.1%',
+      icon: Cpu,
     },
     {
-      name: 'Active Assignments',
-      value: (stats.assignments.activeHardware + stats.assignments.activeLicenseSeats).toLocaleString(),
-      change: '+8.1%',
-      icon: TrendingUp,
+      name: 'Software Licenses',
+      value: stats.assets.softwareLicense.toLocaleString(),
+      change: '+5.2%',
+      icon: FileText,
+    },
+    {
+      name: 'Assigned Assets',
+      value: stats.assets.byStatus.assigned.toLocaleString(),
+      change: '+3.4%',
+      icon: CheckCircle,
+    },
+    {
+      name: 'Employees',
+      value: stats.employees.total.toLocaleString(),
+      change: '+2.1%',
+      icon: Users,
     },
     {
       name: 'Available Assets',
       value: stats.assets.byStatus.available.toLocaleString(),
-      change: '+2.3%',
+      change: '+1.8%',
       icon: LayoutDashboard,
     },
   ] : [];
@@ -65,8 +77,8 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       {loading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
               className="rounded-lg border border-border bg-card p-6 shadow-sm flex items-center justify-center"
@@ -80,7 +92,7 @@ export default function DashboardPage() {
           <p className="text-destructive">{error}</p>
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {statsCards.map((stat) => (
             <div
               key={stat.name}
