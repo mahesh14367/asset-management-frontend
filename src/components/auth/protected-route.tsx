@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoadingPage } from '../ui/loading-spinner';
-import { getAccessToken } from '../../lib/axios';
+import { useAuth } from '../../providers/auth-provider';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,21 +11,23 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  const {
+    status,
+    isAuthenticated,
+  } = useAuth();
 
   useEffect(() => {
-    // Check authentication using the in-memory token store
-    const token = getAccessToken();
-    const authenticated = !!token;
-    setIsAuthenticated(authenticated);
-
-    if (!authenticated) {
-      router.push('/login');
+    if (
+      status === 'unauthenticated'
+    ) {
+      router.replace('/login');
     }
-  }, [router]);
+  }, [status, router]);
 
-  // Show loading while checking auth to avoid hydration mismatch
-  if (isAuthenticated === null) {
+  // IMPORTANT:
+  // Don't redirect while authentication is being restored.
+  if (status === 'initializing') {
     return <LoadingPage />;
   }
 

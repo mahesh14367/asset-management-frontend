@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   LayoutDashboard, 
   Package, 
@@ -120,7 +121,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Navigation */}
             <nav className="flex-1 space-y-1 p-4">
               {navigation.map((item) => (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -131,7 +132,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   <item.icon className="size-5" />
                   {item.name}
-                </a>
+                </Link>
               ))}
             </nav>
 
@@ -195,18 +196,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     />
                     <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-border bg-card shadow-lg z-50">
                       <div className="p-2 space-y-1">
-                        <a
+                        <Link
                           href="/dashboard/profile"
                           className="block px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                         >
                           Profile
-                        </a>
-                        <a
+                        </Link>
+                        <Link
                           href="/dashboard/settings"
                           className="block px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                         >
                           Settings
-                        </a>
+                        </Link>
                         <hr className="border-border my-1" />
                         <button 
                           onClick={handleLogout}
