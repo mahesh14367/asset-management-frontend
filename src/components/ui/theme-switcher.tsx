@@ -6,16 +6,27 @@ import { Button } from './button';
 
 export function ThemeSwitcher() {
   const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    
+    // Check if dark class is already on document (from SSR or previous state)
+    const hasDarkClass = document.documentElement.classList.contains('dark');
+    
     // Check system preference or localStorage
     const stored = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = stored === 'dark' || (!stored && prefersDark);
-    setIsDark(initialTheme);
     
-    if (initialTheme) {
+    // Determine initial theme
+    const shouldBeDark = stored === 'dark' || (!stored && (hasDarkClass || prefersDark));
+    setIsDark(shouldBeDark);
+    
+    // Apply theme to document
+    if (shouldBeDark) {
       document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
   }, []);
 
@@ -31,6 +42,20 @@ export function ThemeSwitcher() {
       localStorage.setItem('theme', 'light');
     }
   };
+
+  // Don't render until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        disabled
+        title="Toggle theme"
+      >
+        <Moon className="size-5" />
+      </Button>
+    );
+  }
 
   return (
     <Button
