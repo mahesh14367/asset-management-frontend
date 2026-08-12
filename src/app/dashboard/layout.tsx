@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { usePathname } from 'next/navigation';
+import { useState, useMemo, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Package, 
@@ -19,11 +19,30 @@ import { Breadcrumb } from '../../components/ui/breadcrumb';
 import { ErrorBoundary } from '../../components/ui/error-boundary';
 import { ProtectedRoute } from '../../components/auth/protected-route';
 import { authApi } from '../../api';
+import { setAccessToken } from '../../lib/axios';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Handle responsive sidebar state
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+    };
+
+    // Initial check
+    const mobile = window.innerWidth < 1024;
+    setIsMobile(mobile);
+    setSidebarOpen(!mobile);
+
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -31,9 +50,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      localStorage.removeItem('auth_token');
+      setAccessToken(null);
       localStorage.removeItem('userData');
-      window.location.href = '/login';
+      router.push('/login');
     }
   };
 
@@ -70,16 +89,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
         {/* Mobile sidebar backdrop */}
-        {sidebarOpen && (
+        {sidebarOpen && isMobile && (
           <div 
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-40"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         {/* Sidebar */}
         <aside
-          className={`fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          className={`fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border transition-transform duration-300 ease-in-out ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
@@ -87,14 +106,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Logo */}
             <div className="flex h-16 items-center justify-between border-b border-border px-6">
               <h1 className="text-xl font-bold">Asset Manager</h1>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <X className="size-5" />
-              </Button>
+              {isMobile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <X className="size-5" />
+                </Button>
+              )}
             </div>
 
             {/* Navigation */}
@@ -129,7 +149,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </aside>
 
         {/* Main content */}
-        <div className={`transition-all duration-300 ease-in-out ${sidebarOpen ? 'lg:ml-64' : ''}`}>
+        <div className={`transition-all duration-300 ease-in-out ${sidebarOpen && !isMobile ? 'ml-64' : ''}`}>
           {/* Header */}
           <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background px-6">
             <Button

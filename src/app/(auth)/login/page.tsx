@@ -4,24 +4,26 @@ import { useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/button';
 import { Lock, Mail } from 'lucide-react';
 import { authApi } from '../../../api';
+import { setAccessToken } from '../../../lib/axios';
 
 export default function LoginPage() {
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
+    
     e.preventDefault();
     const email = (e.target as HTMLFormElement).email.value;
     const password = (e.target as HTMLFormElement).password.value;
     
     try {
       const response = await authApi.login({ email, password });
-      localStorage.setItem('auth_token', response.token);
+      setAccessToken(response.accessToken);
       localStorage.setItem('userData', JSON.stringify(response.user));
       router.push('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
       // For demo purposes, still allow login if API fails
-      localStorage.setItem('auth_token', 'mock_token_' + Date.now());
+      setAccessToken('mock_token_' + Date.now());
       router.push('/dashboard');
     }
   };
