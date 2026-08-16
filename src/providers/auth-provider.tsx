@@ -11,6 +11,7 @@ import {
   getAccessToken,
   setAccessToken,
 } from '../lib/axios';
+import { authApi, User } from '../api/auth';
 
 type AuthStatus =
   | 'initializing'
@@ -20,6 +21,9 @@ type AuthStatus =
 interface AuthContextValue {
   status: AuthStatus;
   isAuthenticated: boolean;
+  user: User | null;
+  login: (accessToken: string, userData: User) => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -29,11 +33,42 @@ export function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [status, setStatus] =
-    useState<AuthStatus>('initializing');
+  const router = useRouter();
+  const [status, setStatus] = useState<AuthStatus>('initializing');
+  const [user, setUser] = useState<User | null>(null);
+
+  const login = (accessToken: string, userData: User) => {
+    setAccessToken(accessToken);
+    setUser(userData);
+    localStorage.setItem('userData', JSON.stringify(userData));
+    setStatus('authenticated');
+  };
+
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setAccessToken(null);
+      setUser(null);
+      localStorage.removeItem('userData');
+      router.push('/login');
+    }
+  };
 
   useEffect(() => {
     const initializeAuth = async () => {
+      // Check for existing user data in localStorage
+      const storedUserData = localStorage.getItem('userData');
+      if (storedUserData) {
+        try {
+          setUser(JSON.parse(storedUserData));
+        } catch (error) {
+          console.error('Failed to parse stored user data:', error);
+        }
+      }
+
       // Already authenticated in this browser session
       if (getAccessToken()) {
         setStatus('authenticated');
@@ -55,6 +90,7 @@ export function AuthProvider({
         if (!response.ok) {
           setAccessToken(null);
           localStorage.removeItem('userData');
+          setUser(null);
           setStatus('unauthenticated');
           return;
         }
@@ -70,6 +106,15 @@ export function AuthProvider({
 
         setAccessToken(accessToken);
         setStatus('authenticated');
+
+        // Fetch user data after successful refresh
+        try {
+          const userData = await authApi.me();
+          setUser(userData);
+          localStorage.setItem('userData', JSON.stringify(userData));
+        } catch (error) {
+          console.error('Failed to fetch user data:', error);
+        }
       } catch (error) {
         console.error(
           'Authentication initialization failed:',
@@ -90,6 +135,9 @@ export function AuthProvider({
       value={{
         status,
         isAuthenticated: status === 'authenticated',
+        user,
+        login,
+        logout,
       }}
     >
       {children}

@@ -7,7 +7,7 @@ export type AssetStatus = 'available' | 'assigned' | 'under_maintenance' | 'in_r
 export type AssetCondition = 'new' | 'good' | 'fair' | 'damaged';
 
 export interface Asset {
-  _id: string;
+  id: string;
   assetTag: string;
   assetKind: AssetKind;
   category: AssetCategory;

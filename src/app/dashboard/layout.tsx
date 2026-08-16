@@ -12,15 +12,18 @@ import {
   Menu,
   X,
   Bell,
-  ChevronDown
+  ChevronDown,
+  TrendingUp,
+  Wrench,
+  FileText,
+  History
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { ThemeSwitcher } from '../../components/ui/theme-switcher';
 import { Breadcrumb } from '../../components/ui/breadcrumb';
 import { ErrorBoundary } from '../../components/ui/error-boundary';
 import { ProtectedRoute } from '../../components/auth/protected-route';
-import { authApi } from '../../api';
-import { setAccessToken } from '../../lib/axios';
+import { useAuth } from '../../providers/auth-provider';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -28,6 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { user, logout } = useAuth();
 
   // Handle responsive sidebar state
   useEffect(() => {
@@ -46,15 +50,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await authApi.logout();
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      setAccessToken(null);
-      localStorage.removeItem('userData');
-      router.push('/login');
-    }
+    await logout();
   };
 
   // Generate breadcrumbs from pathname
@@ -75,7 +71,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Assets', href: '/dashboard/assets', icon: Package },
-    { name: 'Users', href: '/dashboard/users', icon: Users },
+    { name: 'Employees', href: '/dashboard/employees', icon: Users },
+    { name: 'Assignments', href: '/dashboard/assignments', icon: TrendingUp },
+    { name: 'Maintenance', href: '/dashboard/maintenance', icon: Wrench },
+    { name: 'Reports', href: '/dashboard/reports', icon: FileText },
+    { name: 'Audit Logs', href: '/dashboard/audit-logs', icon: History },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 
@@ -178,11 +178,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className="flex items-center gap-3 hover:bg-accent rounded-lg px-2 py-1 transition-colors"
                 >
                   <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
-                    JD
+                    {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                   </div>
                   <div className="hidden sm:block text-left">
-                    <p className="text-sm font-medium">John Doe</p>
-                    <p className="text-xs text-muted-foreground">Admin</p>
+                    <p className="text-sm font-medium">{user?.name || 'User'}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{user?.role?.replace('_', ' ') || 'Employee'}</p>
                   </div>
                   <ChevronDown className="size-4 text-muted-foreground hidden sm:block" />
                 </button>

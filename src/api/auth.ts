@@ -19,6 +19,12 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+}
+
 export interface ForgotPasswordData {
   email: string;
 }
@@ -33,9 +39,19 @@ export interface LoginResponse {
   accessToken: string;
 }
 
+export interface RegisterResponse {
+  user: User;
+  accessToken: string;
+}
+
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     const response: ApiResponse<LoginResponse> = await axiosInstance.post('/auth/login', credentials);
+    return response.data;
+  },
+
+  register: async (data: RegisterData): Promise<RegisterResponse> => {
+    const response: ApiResponse<RegisterResponse> = await axiosInstance.post('/auth/register', data);
     return response.data;
   },
 

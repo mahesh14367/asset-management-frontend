@@ -1,13 +1,17 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Lock, Mail } from 'lucide-react';
 import { authApi } from '../../../api';
-import { setAccessToken } from '../../../lib/axios';
+import { useAuth } from '../../../providers/auth-provider';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     
@@ -15,14 +19,18 @@ export default function LoginPage() {
     const email = (e.target as HTMLFormElement).email.value;
     const password = (e.target as HTMLFormElement).password.value;
     
+    setError(null);
+    setLoading(true);
+    
     try {
       const response = await authApi.login({ email, password });
-      setAccessToken(response.accessToken);
-      localStorage.setItem('userData', JSON.stringify(response.user));
+      login(response.accessToken, response.user);
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login failed:', error);
-      // Show error message to user (you can add error state and display it)
+      setError(error?.response?.data?.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
     }
   };
   return (
@@ -35,6 +43,11 @@ export default function LoginPage() {
 
       {/* Login Form */}
       <form onSubmit={handleLogin} className="space-y-6">
+        {error && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
         <div className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
@@ -79,8 +92,8 @@ export default function LoginPage() {
           </a>
         </div>
 
-        <Button type="submit" className="w-full" size="lg">
-          Sign in
+        <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          {loading ? 'Signing in...' : 'Sign in'}
         </Button>
 
         <div className="relative">
