@@ -3,8 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '../../../../../components/ui/button';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Trash2 } from 'lucide-react';
 import { assetsApi, Asset, UpdateAssetData, AssetCategory, AssetCondition, AssetKind } from '../../../../../api/assets';
+import { DeleteAssetModal } from '../../../../../components/delete-asset-modal';
+
+function toInputDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  return dateStr.split('T')[0];
+}
 
 export default function EditAssetPage() {
   const router = useRouter();
@@ -15,6 +21,7 @@ export default function EditAssetPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
 
   // Form state - will be initialized from asset data
   const [formData, setFormData] = useState<UpdateAssetData>({});
@@ -35,9 +42,9 @@ export default function EditAssetPage() {
         brand: data.brand,
         modelName: data.modelName,
         vendor: data.vendor,
-        purchaseDate: data.purchaseDate,
+        purchaseDate: toInputDate(data.purchaseDate),
         purchasePrice: data.purchasePrice,
-        warrantyExpiryDate: data.warrantyExpiryDate,
+        warrantyExpiryDate: toInputDate(data.warrantyExpiryDate),
         location: data.location,
         notes: data.notes,
         condition: data.condition,
@@ -102,10 +109,16 @@ export default function EditAssetPage() {
             Update asset information for {asset?.assetTag}
           </p>
         </div>
-        <Button variant="ghost" onClick={() => router.push(`/dashboard/assets/${assetId}`)}>
-          <ArrowLeft className="mr-2 size-4" />
-          Back to Asset
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => router.push(`/dashboard/assets/${assetId}`)}>
+            <ArrowLeft className="mr-2 size-4" />
+            Back to Asset
+          </Button>
+          <Button variant="destructive" onClick={() => asset && setAssetToDelete(asset)}>
+            <Trash2 className="mr-2 size-4" />
+            Delete
+          </Button>
+        </div>
       </div>
 
       {/* Form */}
@@ -136,6 +149,13 @@ export default function EditAssetPage() {
           </Button>
         </div>
       </form>
+
+      <DeleteAssetModal
+        asset={asset}
+        open={!!assetToDelete}
+        onClose={() => setAssetToDelete(null)}
+        onDeleted={() => router.push('/dashboard/assets')}
+      />
     </div>
   );
 }

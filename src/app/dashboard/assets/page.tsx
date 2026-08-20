@@ -7,6 +7,7 @@ import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2 } from 'lucide-
 import { assetsApi, Asset, AssetStatus, AssetCategory, AssetKind } from '../../../api/assets';
 import { usePermissions } from '../../../hooks/use-permissions';
 import { PermissionGuard } from '../../../components/auth/permission-guard';
+import { DeleteAssetModal } from '../../../components/delete-asset-modal';
 
 export default function AssetsPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function AssetsPage() {
   const [categoryFilter, setCategoryFilter] = useState<AssetCategory | 'all'>('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
 
   const fetchAssets = async () => {
     try {
@@ -231,7 +233,7 @@ export default function AssetsPage() {
                           </Button>
                         </PermissionGuard>
                         <PermissionGuard permission="assets:delete">
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" onClick={() => setAssetToDelete(asset)}>
                             <Trash2 className="size-4 text-destructive" />
                           </Button>
                         </PermissionGuard>
@@ -271,6 +273,13 @@ export default function AssetsPage() {
           </div>
         )}
       </div>
+
+      <DeleteAssetModal
+        asset={assetToDelete}
+        open={!!assetToDelete}
+        onClose={() => setAssetToDelete(null)}
+        onDeleted={fetchAssets}
+      />
     </div>
   );
 }

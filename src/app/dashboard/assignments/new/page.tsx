@@ -118,7 +118,7 @@ export default function NewAssignmentPage() {
             >
               <option value="">Select an asset</option>
               {assets.map((asset) => (
-                <option key={asset.id} value={asset.id}>
+                <option key={(asset as any)._id || asset.id} value={(asset as any)._id || asset.id}>
                   {asset.assetTag} - {asset.name} ({asset.category})
                 </option>
               ))}
@@ -138,7 +138,7 @@ export default function NewAssignmentPage() {
             >
               <option value="">Select an employee</option>
               {employees.map((employee) => (
-                <option key={employee._id} value={employee._id}>
+                <option key={(employee as any)._id || employee.id} value={(employee as any)._id || employee.id}>
                   {employee.fullName} - {employee.department}
                 </option>
               ))}

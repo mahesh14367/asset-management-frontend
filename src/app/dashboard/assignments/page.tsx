@@ -210,8 +210,8 @@ export default function AssignmentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {assignments.map((assignment) => (
-                  <tr key={assignment._id} className="hover:bg-accent/50">
+                {assignments.map((assignment,index) => (
+                  <tr key={assignment._id || `assignment-${index}`} className="hover:bg-accent/50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {assignment.asset && typeof assignment.asset === 'object' 
                         ? assignment.asset.name 

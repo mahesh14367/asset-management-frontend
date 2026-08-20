@@ -149,4 +149,8 @@ export const assetsApi = {
     });
     return response.data;
   },
+
+  delete: async (id: string): Promise<void> => {
+    await axiosInstance.delete(`/assets/${id}`);
+  },
 };

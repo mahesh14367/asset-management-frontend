@@ -7,6 +7,7 @@ import { ArrowLeft, Edit, Trash2, Package, Calendar, DollarSign, MapPin, AlertCi
 import { assetsApi, Asset, AssetStatus, AssetCondition } from '../../../../api/assets';
 import { usePermissions } from '../../../../hooks/use-permissions';
 import { PermissionGuard } from '../../../../components/auth/permission-guard';
+import { DeleteAssetModal } from '../../../../components/delete-asset-modal';
 
 export default function AssetDetailsPage() {
   const router = useRouter();
@@ -303,27 +304,12 @@ export default function AssetDetailsPage() {
       )}
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-card rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <AlertCircle className="size-5 text-destructive" />
-              <h3 className="text-lg font-semibold">Delete Asset</h3>
-            </div>
-            <p className="text-sm text-muted-foreground mb-6">
-              Are you sure you want to delete this asset? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleDelete}>
-                Delete
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteAssetModal
+        asset={asset}
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onDeleted={() => router.push('/dashboard/assets')}
+      />
     </div>
   );
 }

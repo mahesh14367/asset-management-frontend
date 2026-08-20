@@ -28,6 +28,7 @@ export default function EmployeeDetailsPage() {
       if (!employeeId) {
         throw new Error('Employee ID is missing');
       }
+      console.log('Fetching employee with ID:', employeeId);
       const data = await employeesApi.getById(employeeId);
       setEmployee(data);
     } catch (err: any) {
@@ -112,7 +113,7 @@ export default function EmployeeDetailsPage() {
             Back
           </Button>
           <PermissionGuard permission="employees:update">
-            <Button onClick={() => router.push(`/dashboard/employees/${employee._id}/edit`)}>
+            <Button onClick={() => router.push(`/dashboard/employees/${employee.id}/edit`)}>
               <Edit className="mr-2 size-4" />
               Edit
             </Button>
@@ -223,13 +224,13 @@ export default function EmployeeDetailsPage() {
         <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
         <div className="flex flex-wrap gap-3">
           <PermissionGuard permission="employees:update">
-            <Button variant="outline" onClick={() => router.push(`/dashboard/employees/${employee._id}/edit`)}>
+            <Button variant="outline" onClick={() => router.push(`/dashboard/employees/${employee.id}/edit`)}>
               <Edit className="mr-2 size-4" />
               Update Employment Status
             </Button>
           </PermissionGuard>
           <PermissionGuard permission="employees:manage_access">
-            <Button variant="outline" onClick={() => router.push(`/dashboard/employees/${employee._id}/grant-access`)}>
+            <Button variant="outline" onClick={() => router.push(`/dashboard/employees/${employee.id}/grant-access`)}>
               <User className="mr-2 size-4" />
               Grant System Access
             </Button>

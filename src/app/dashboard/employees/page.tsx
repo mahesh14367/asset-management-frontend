@@ -203,8 +203,8 @@ export default function EmployeesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {employees.map((employee) => (
-                  <tr key={employee._id} className="hover:bg-accent/50">
+                {employees.map((employee, index) => (
+                  <tr key={employee.id || employee.employeeCode || `employee-${index}`} className="hover:bg-accent/50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {employee.employeeCode}
                     </td>
@@ -235,7 +235,7 @@ export default function EmployeesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => router.push(`/dashboard/employees/${employee._id}`)}
+                          onClick={() => router.push(`/dashboard/employees/${employee.id}`)}
                         >
                           <Eye className="size-4" />
                         </Button>
@@ -243,7 +243,7 @@ export default function EmployeesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => router.push(`/dashboard/employees/${employee._id}/edit`)}
+                            onClick={() => router.push(`/dashboard/employees/${employee.id}/edit`)}
                           >
                             <Edit className="size-4" />
                           </Button>
@@ -252,7 +252,7 @@ export default function EmployeesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleGrantAccess(employee._id)}
+                            onClick={() => handleGrantAccess(employee.id)}
                             title="Grant System Access"
                           >
                             <Shield className="size-4" />
