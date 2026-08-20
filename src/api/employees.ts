@@ -5,7 +5,7 @@ export type EmploymentType = 'full_time' | 'part_time' | 'contract' | 'intern';
 export type EmploymentStatus = 'active' | 'on_leave' | 'resigned' | 'terminated';
 
 export interface Employee {
-  _id: string;
+  id: string;
   employeeCode: string;
   firstName: string;
   lastName: string;

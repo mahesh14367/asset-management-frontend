@@ -6,9 +6,9 @@ export type AssignmentAssetKind = 'hardware' | 'software_license';
 
 export interface AssetAssignment {
   _id: string;
-  asset: string;
+  asset: string | { _id: string; name: string; assetTag: string };
   assetKind: AssignmentAssetKind;
-  employee: string;
+  employee: string | { _id: string; fullName: string; email: string };
   assignedDate: string;
   assignedBy: string;
   remarks: string;

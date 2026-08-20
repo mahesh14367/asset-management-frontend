@@ -3,71 +3,86 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/button';
-import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2 } from 'lucide-react';
-import { assetsApi, Asset, AssetStatus, AssetCategory, AssetKind } from '../../../api/assets';
+import { Plus, Search, Eye, Edit, Shield, ShieldOff } from 'lucide-react';
+import { employeesApi, Employee, EmploymentStatus, EmploymentType } from '../../../api/employees';
 import { usePermissions } from '../../../hooks/use-permissions';
 import { PermissionGuard } from '../../../components/auth/permission-guard';
-import { DeleteAssetModal } from '../../../components/delete-asset-modal';
 
-export default function AssetsPage() {
+export default function EmployeesPage() {
   const router = useRouter();
   const { can } = usePermissions();
   
-  const [assets, setAssets] = useState<Asset[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<AssetStatus | 'all'>('all');
-  const [categoryFilter, setCategoryFilter] = useState<AssetCategory | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<EmploymentStatus | 'all'>('all');
+  const [typeFilter, setTypeFilter] = useState<EmploymentType | 'all'>('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
 
-  const fetchAssets = async () => {
+  const fetchEmployees = async () => {
     try {
       setLoading(true);
       const params: any = { page, limit: 10 };
       if (search) params.search = search;
-      if (statusFilter !== 'all') params.status = statusFilter;
-      if (categoryFilter !== 'all') params.category = categoryFilter;
+      if (statusFilter !== 'all') params.employmentStatus = statusFilter;
+      if (typeFilter !== 'all') params.employmentType = typeFilter;
       
-      const response = await assetsApi.getAll(params);
-      setAssets(response.assets);
-      setTotal(response.pagination?.total || response.assets?.length || 0);
+      const response = await employeesApi.getAll(params);
+      setEmployees(response.employees);
+      setTotal(response.pagination?.total || response.employees?.length || 0);
     } catch (err) {
-      console.error('Failed to fetch assets:', err);
-      setError('Failed to load assets');
+      console.error('Failed to fetch employees:', err);
+      setError('Failed to load employees');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAssets();
-  }, [page, statusFilter, categoryFilter]);
+    fetchEmployees();
+  }, [page, statusFilter, typeFilter]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    fetchAssets();
+    fetchEmployees();
   };
 
-  const getStatusColor = (status: AssetStatus) => {
+  const getStatusColor = (status: EmploymentStatus) => {
     const colors = {
-      available: 'bg-green-100 text-green-800',
-      assigned: 'bg-blue-100 text-blue-800',
-      under_maintenance: 'bg-yellow-100 text-yellow-800',
-      in_repair: 'bg-orange-100 text-orange-800',
-      retired: 'bg-gray-100 text-gray-800',
-      disposed: 'bg-red-100 text-red-800',
-      lost: 'bg-red-100 text-red-800',
+      active: 'bg-green-100 text-green-800',
+      on_leave: 'bg-yellow-100 text-yellow-800',
+      resigned: 'bg-gray-100 text-gray-800',
+      terminated: 'bg-red-100 text-red-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const getCategoryIcon = (category: AssetCategory) => {
-    // Simple icon mapping - can be enhanced
-    return '📦';
+  const getTypeColor = (type: EmploymentType) => {
+    const colors = {
+      full_time: 'bg-blue-100 text-blue-800',
+      part_time: 'bg-purple-100 text-purple-800',
+      contract: 'bg-orange-100 text-orange-800',
+      intern: 'bg-pink-100 text-pink-800',
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
+  };
+
+  const handleGrantAccess = async (employeeId: string) => {
+    // This would open a modal to grant system access
+    router.push(`/dashboard/employees/${employeeId}/grant-access`);
+  };
+
+  const handleRevokeAccess = async (employeeId: string) => {
+    try {
+      await employeesApi.revokeAccess(employeeId);
+      fetchEmployees();
+    } catch (err) {
+      console.error('Failed to revoke access:', err);
+      setError('Failed to revoke access');
+    }
   };
 
   return (
@@ -75,15 +90,15 @@ export default function AssetsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Assets</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Employees</h1>
           <p className="text-muted-foreground mt-2">
-            Manage and track all your assets ({total} total)
+            Manage your workforce ({total} total)
           </p>
         </div>
-        <PermissionGuard permission="assets:create">
-          <Button onClick={() => router.push('/dashboard/assets/new')}>
+        <PermissionGuard permission="employees:create">
+          <Button onClick={() => router.push('/dashboard/employees/new')}>
             <Plus className="mr-2 size-4" />
-            Add Asset
+            Add Employee
           </Button>
         </PermissionGuard>
       </div>
@@ -94,7 +109,7 @@ export default function AssetsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input
             type="search"
-            placeholder="Search assets..."
+            placeholder="Search employees..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full h-10 pl-10 pr-4 rounded-lg border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -103,65 +118,58 @@ export default function AssetsPage() {
 
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as AssetStatus | 'all')}
+          onChange={(e) => setStatusFilter(e.target.value as EmploymentStatus | 'all')}
           className="h-10 px-4 rounded-lg border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="all">All Statuses</option>
-          <option value="available">Available</option>
-          <option value="assigned">Assigned</option>
-          <option value="under_maintenance">Under Maintenance</option>
-          <option value="in_repair">In Repair</option>
-          <option value="retired">Retired</option>
-          <option value="disposed">Disposed</option>
-          <option value="lost">Lost</option>
+          <option value="active">Active</option>
+          <option value="on_leave">On Leave</option>
+          <option value="resigned">Resigned</option>
+          <option value="terminated">Terminated</option>
         </select>
 
         <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value as AssetCategory | 'all')}
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value as EmploymentType | 'all')}
           className="h-10 px-4 rounded-lg border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <option value="all">All Categories</option>
-          <option value="laptop">Laptop</option>
-          <option value="desktop">Desktop</option>
-          <option value="server">Server</option>
-          <option value="networking_device">Networking Device</option>
-          <option value="mobile_device">Mobile Device</option>
-          <option value="printer">Printer</option>
-          <option value="accessory">Accessory</option>
-          <option value="software_license">Software License</option>
+          <option value="all">All Types</option>
+          <option value="full_time">Full Time</option>
+          <option value="part_time">Part Time</option>
+          <option value="contract">Contract</option>
+          <option value="intern">Intern</option>
         </select>
       </div>
 
-      {/* Assets Table */}
+      {/* Employees Table */}
       <div className="rounded-lg border border-border bg-card shadow-sm">
         <div className="border-b border-border px-6 py-4">
-          <h2 className="text-lg font-semibold">All Assets</h2>
+          <h2 className="text-lg font-semibold">All Employees</h2>
         </div>
         
         {loading ? (
           <div className="p-6">
             <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading assets...</p>
+              <p className="text-muted-foreground">Loading employees...</p>
             </div>
           </div>
         ) : error ? (
           <div className="p-6">
             <div className="text-center py-12">
               <p className="text-destructive">{error}</p>
-              <Button variant="outline" className="mt-4" onClick={fetchAssets}>
+              <Button variant="outline" className="mt-4" onClick={fetchEmployees}>
                 Retry
               </Button>
             </div>
           </div>
-        ) : assets.length === 0 ? (
+        ) : employees.length === 0 ? (
           <div className="p-6">
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No assets found</p>
-              <PermissionGuard permission="assets:create">
-                <Button variant="outline" className="mt-4" onClick={() => router.push('/dashboard/assets/new')}>
+              <p className="text-muted-foreground">No employees found</p>
+              <PermissionGuard permission="employees:create">
+                <Button variant="outline" className="mt-4" onClick={() => router.push('/dashboard/employees/new')}>
                   <Plus className="mr-2 size-4" />
-                  Add your first asset
+                  Add your first employee
                 </Button>
               </PermissionGuard>
             </div>
@@ -172,19 +180,22 @@ export default function AssetsPage() {
               <thead>
                 <tr className="border-b border-border">
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Asset Tag
+                    Employee Code
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Category
+                    Department
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Designation
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Location
+                    Type
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Actions
@@ -192,49 +203,59 @@ export default function AssetsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {assets.map((asset) => (
-                  <tr key={asset.id} className="hover:bg-accent/50">
+                {employees.map((employee, index) => (
+                  <tr key={employee.id || employee.employeeCode || `employee-${index}`} className="hover:bg-accent/50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {asset.assetTag}
+                      {employee.employeeCode}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {asset.name}
+                      <div>
+                        <p className="font-medium">{employee.fullName}</p>
+                        <p className="text-muted-foreground text-xs">{employee.email}</p>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className="flex items-center gap-2">
-                        <span>{getCategoryIcon(asset.category)}</span>
-                        <span className="capitalize">{asset.category.replace('_', ' ')}</span>
+                      {employee.department}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {employee.designation}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(employee.employmentStatus)}`}>
+                        {employee.employmentStatus.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(asset.status)}`}>
-                        {asset.status.replace('_', ' ')}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getTypeColor(employee.employmentType)}`}>
+                        {employee.employmentType.replace('_', ' ')}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                      {asset.location}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => router.push(`/dashboard/assets/${asset.id}`)}
+                          onClick={() => router.push(`/dashboard/employees/${employee.id}`)}
                         >
                           <Eye className="size-4" />
                         </Button>
-                        <PermissionGuard permission="assets:update">
+                        <PermissionGuard permission="employees:update">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => router.push(`/dashboard/assets/${asset.id}/edit`)}
+                            onClick={() => router.push(`/dashboard/employees/${employee.id}/edit`)}
                           >
                             <Edit className="size-4" />
                           </Button>
                         </PermissionGuard>
-                        <PermissionGuard permission="assets:delete">
-                          <Button variant="ghost" size="icon" onClick={() => setAssetToDelete(asset)}>
-                            <Trash2 className="size-4 text-destructive" />
+                        <PermissionGuard permission="employees:manage_access">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleGrantAccess(employee.id)}
+                            title="Grant System Access"
+                          >
+                            <Shield className="size-4" />
                           </Button>
                         </PermissionGuard>
                       </div>
@@ -250,7 +271,7 @@ export default function AssetsPage() {
         {total > 10 && (
           <div className="border-t border-border px-6 py-4 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {((page - 1) * 10) + 1} to {Math.min(page * 10, total)} of {total} assets
+              Showing {((page - 1) * 10) + 1} to {Math.min(page * 10, total)} of {total} employees
             </p>
             <div className="flex items-center gap-2">
               <Button
@@ -273,13 +294,6 @@ export default function AssetsPage() {
           </div>
         )}
       </div>
-
-      <DeleteAssetModal
-        asset={assetToDelete}
-        open={!!assetToDelete}
-        onClose={() => setAssetToDelete(null)}
-        onDeleted={fetchAssets}
-      />
     </div>
   );
 }
