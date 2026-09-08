@@ -25,6 +25,8 @@ export default function NewAssignmentPage() {
     remarks: '',
   });
 
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+
   useEffect(() => {
     fetchOptions();
   }, []);
@@ -52,7 +54,24 @@ export default function NewAssignmentPage() {
     setLoading(true);
 
     try {
-      await assetAssignmentsApi.create(formData);
+      const submissionData: any = {
+        asset: formData.asset,
+        employee: formData.employee,
+        assetKind: selectedAsset?.assetKind,
+        remarks: formData.remarks,
+      };
+
+      // Only include expectedReturnDate if user entered a value
+      if (formData.expectedReturnDate) {
+        submissionData.expectedReturnDate = formData.expectedReturnDate;
+      }
+
+      // Only include conditionAtAssignment for hardware assets
+      if (isHardware && formData.conditionAtAssignment) {
+        submissionData.conditionAtAssignment = formData.conditionAtAssignment;
+      }
+
+      await assetAssignmentsApi.create(submissionData);
       router.push('/dashboard/assignments');
     } catch (err: any) {
       console.error('Failed to create assignment:', err);
@@ -65,6 +84,18 @@ export default function NewAssignmentPage() {
   const updateField = (field: keyof CreateAssignmentData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  const handleAssetChange = (assetId: string) => {
+    updateField('asset', assetId);
+    const asset = assets.find(a => (a as any)._id === assetId || a.id === assetId);
+    setSelectedAsset(asset || null);
+    // Reset condition if switching to software license
+    if (asset?.assetKind === 'software_license') {
+      updateField('conditionAtAssignment', '');
+    }
+  };
+
+  const isHardware = selectedAsset?.assetKind === 'hardware';
 
   if (loadingOptions) {
     return (
@@ -112,7 +143,7 @@ export default function NewAssignmentPage() {
             <label className="text-sm font-medium">Select Asset *</label>
             <select
               value={formData.asset}
-              onChange={(e) => updateField('asset', e.target.value)}
+              onChange={(e) => handleAssetChange(e.target.value)}
               className="w-full h-10 px-4 rounded-lg border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               required
             >
@@ -158,20 +189,22 @@ export default function NewAssignmentPage() {
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Condition at Assignment *</label>
-            <select
-              value={formData.conditionAtAssignment}
-              onChange={(e) => updateField('conditionAtAssignment', e.target.value)}
-              className="w-full h-10 px-4 rounded-lg border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              required
-            >
-              <option value="new">New</option>
-              <option value="good">Good</option>
-              <option value="fair">Fair</option>
-              <option value="damaged">Damaged</option>
-            </select>
-          </div>
+          {isHardware && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Condition at Assignment *</label>
+              <select
+                value={formData.conditionAtAssignment}
+                onChange={(e) => updateField('conditionAtAssignment', e.target.value)}
+                className="w-full h-10 px-4 rounded-lg border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                required
+              >
+                <option value="new">New</option>
+                <option value="good">Good</option>
+                <option value="fair">Fair</option>
+                <option value="damaged">Damaged</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">

@@ -5,10 +5,10 @@ export type AssignmentStatus = 'active' | 'returned' | 'lost' | 'revoked';
 export type AssignmentAssetKind = 'hardware' | 'software_license';
 
 export interface AssetAssignment {
-  _id: string;
+  id: string;
   asset: string | { _id: string; name: string; assetTag: string };
   assetKind: AssignmentAssetKind;
-  employee: string | { _id: string; fullName: string; email: string };
+  employee: { _id: string; fullName: string; email: string; employeeCode: string; department: string };
   assignedDate: string;
   assignedBy: string;
   remarks: string;
@@ -41,6 +41,7 @@ export interface CreateAssignmentData {
   expectedReturnDate?: string;
   conditionAtAssignment?: string;
   remarks?: string;
+  assetKind?: AssignmentAssetKind;
 }
 
 export interface ReturnAssignmentData {
@@ -72,6 +73,11 @@ export const assetAssignmentsApi = {
     return response.data;
   },
 
+  getById: async (id: string): Promise<AssetAssignment> => {
+    const response: ApiResponse<AssetAssignment> = await axiosInstance.get(`/asset-assignments/${id}`);
+    return response.data;
+  },
+
   create: async (data: CreateAssignmentData): Promise<AssetAssignment> => {
     const response: ApiResponse<AssetAssignment> = await axiosInstance.post('/asset-assignments', data);
     return response.data;
@@ -86,6 +92,7 @@ export const assetAssignmentsApi = {
     const response: ApiResponse<AssetAssignment> = await axiosInstance.patch(`/asset-assignments/${id}/report-lost`, data);
     return response.data;
   },
+
 
   revoke: async (id: string, data: RevokeAssignmentData): Promise<AssetAssignment> => {
     const response: ApiResponse<AssetAssignment> = await axiosInstance.patch(`/asset-assignments/${id}/revoke`, data);

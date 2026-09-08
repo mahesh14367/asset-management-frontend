@@ -57,12 +57,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const breadcrumbs = useMemo(() => {
     const pathSegments = pathname.split('/').filter(Boolean);
     if (pathSegments.length <= 1) return [];
-    
+
+    // Check if a segment looks like a MongoDB ObjectId (24 hex characters)
+    const isObjectId = (segment: string) => /^[0-9a-fA-F]{24}$/.test(segment);
+
     return pathSegments.slice(1).map((segment, index) => {
       const href = '/' + pathSegments.slice(0, index + 2).join('/');
       const isLast = index === pathSegments.length - 2;
+
+      // Replace ObjectId with "Details" label
+      let label = segment.charAt(0).toUpperCase() + segment.slice(1);
+      if (isObjectId(segment)) {
+        label = 'Details';
+      }
+
       return {
-        label: segment.charAt(0).toUpperCase() + segment.slice(1),
+        label,
         href: isLast ? undefined : href,
       };
     });
