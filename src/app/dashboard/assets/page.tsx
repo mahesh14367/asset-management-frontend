@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/button';
-import { Plus, Search, Filter, MoreHorizontal, Eye, Edit, Trash2 } from 'lucide-react';
-import { assetsApi, Asset, AssetStatus, AssetCategory, AssetKind } from '../../../api/assets';
+import { Plus, Search, Eye, Edit, Trash2, Laptop, Server, Smartphone, Printer, Package, Barcode } from 'lucide-react';
+import { assetsApi, Asset, AssetStatus, AssetCategory } from '../../../api/assets';
 import { usePermissions } from '../../../hooks/use-permissions';
 import { PermissionGuard } from '../../../components/auth/permission-guard';
 import { DeleteAssetModal } from '../../../components/delete-asset-modal';
@@ -184,6 +184,9 @@ export default function AssetsPage() {
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Barcode
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Location
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -210,6 +213,21 @@ export default function AssetsPage() {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(asset.status)}`}>
                         {asset.status.replace('_', ' ')}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {asset.assetKind === 'hardware' && asset.barcode ? (
+                        <span className="flex items-center gap-2 text-green-600">
+                          <Barcode className="size-4" />
+                          <span className="text-xs">Generated</span>
+                        </span>
+                      ) : asset.assetKind === 'hardware' ? (
+                        <span className="flex items-center gap-2 text-muted-foreground">
+                          <Barcode className="size-4" />
+                          <span className="text-xs">Not generated</span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">N/A</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {asset.location}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../../../components/ui/button';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Upload, X } from 'lucide-react';
 import { assetAssignmentsApi, CreateAssignmentData } from '../../../../api/asset-assignments';
 import { assetsApi, Asset } from '../../../../api/assets';
 import { employeesApi, Employee } from '../../../../api/employees';
@@ -24,6 +24,10 @@ export default function NewAssignmentPage() {
     conditionAtAssignment: 'good',
     remarks: '',
   });
+
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOptions();
@@ -52,7 +56,29 @@ export default function NewAssignmentPage() {
     setLoading(true);
 
     try {
-      await assetAssignmentsApi.create(formData);
+      const submissionData: any = {
+        asset: formData.asset,
+        employee: formData.employee,
+        assetKind: selectedAsset?.assetKind,
+        remarks: formData.remarks,
+      };
+
+      // Only include expectedReturnDate if user entered a value
+      if (formData.expectedReturnDate) {
+        submissionData.expectedReturnDate = formData.expectedReturnDate;
+      }
+
+      // Only include conditionAtAssignment for hardware assets
+      if (isHardware && formData.conditionAtAssignment) {
+        submissionData.conditionAtAssignment = formData.conditionAtAssignment;
+      }
+
+      // Include image if selected
+      if (selectedImage) {
+        submissionData.image = selectedImage;
+      }
+
+      await assetAssignmentsApi.create(submissionData);
       router.push('/dashboard/assignments');
     } catch (err: any) {
       console.error('Failed to create assignment:', err);
@@ -62,9 +88,39 @@ export default function NewAssignmentPage() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
   const updateField = (field: keyof CreateAssignmentData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  const handleAssetChange = (assetId: string) => {
+    updateField('asset', assetId);
+    const asset = assets.find(a => (a as any)._id === assetId || a.id === assetId);
+    setSelectedAsset(asset || null);
+    // Reset condition if switching to software license
+    if (asset?.assetKind === 'software_license') {
+      updateField('conditionAtAssignment', '');
+    }
+  };
+
+  const isHardware = selectedAsset?.assetKind === 'hardware';
 
   if (loadingOptions) {
     return (
@@ -112,7 +168,7 @@ export default function NewAssignmentPage() {
             <label className="text-sm font-medium">Select Asset *</label>
             <select
               value={formData.asset}
-              onChange={(e) => updateField('asset', e.target.value)}
+              onChange={(e) => handleAssetChange(e.target.value)}
               className="w-full h-10 px-4 rounded-lg border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               required
             >
@@ -158,20 +214,22 @@ export default function NewAssignmentPage() {
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Condition at Assignment *</label>
-            <select
-              value={formData.conditionAtAssignment}
-              onChange={(e) => updateField('conditionAtAssignment', e.target.value)}
-              className="w-full h-10 px-4 rounded-lg border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              required
-            >
-              <option value="new">New</option>
-              <option value="good">Good</option>
-              <option value="fair">Fair</option>
-              <option value="damaged">Damaged</option>
-            </select>
-          </div>
+          {isHardware && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Condition at Assignment *</label>
+              <select
+                value={formData.conditionAtAssignment}
+                onChange={(e) => updateField('conditionAtAssignment', e.target.value)}
+                className="w-full h-10 px-4 rounded-lg border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                required
+              >
+                <option value="new">New</option>
+                <option value="good">Good</option>
+                <option value="fair">Fair</option>
+                <option value="damaged">Damaged</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -183,6 +241,51 @@ export default function NewAssignmentPage() {
             className="w-full px-4 py-2 rounded-lg border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             placeholder="Add any notes about this assignment..."
           />
+        </div>
+
+        {/* Image Upload */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Asset Image (Optional)</label>
+          {!imagePreview ? (
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <input
+                type="file"
+                id="asset-image"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              <label
+                htmlFor="asset-image"
+                className="cursor-pointer flex flex-col items-center gap-2"
+              >
+                <Upload className="size-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Click to upload an image of the asset
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  PNG, JPG, GIF up to 10MB
+                </p>
+              </label>
+            </div>
+          ) : (
+            <div className="relative inline-block">
+              <img
+                src={imagePreview}
+                alt="Asset preview"
+                className="max-w-xs h-auto rounded-lg border border-border"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 size-6"
+                onClick={handleRemoveImage}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-4">

@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/button';
-import { Plus, Search, Eye, RotateCcw, AlertTriangle, Ban } from 'lucide-react';
+import { Plus, Search, Eye, RotateCcw, AlertTriangle, Ban, Image as ImageIcon } from 'lucide-react';
 import { assetAssignmentsApi, AssetAssignment, AssignmentStatus, AssignmentAssetKind } from '../../../api/asset-assignments';
 import { usePermissions } from '../../../hooks/use-permissions';
 import { PermissionGuard } from '../../../components/auth/permission-guard';
+import { ReturnModal, LostModal, RevokeModal } from '../../../components/assignments/assignment-modals';
 
 export default function AssignmentsPage() {
   const router = useRouter();
@@ -20,6 +21,15 @@ export default function AssignmentsPage() {
   const [kindFilter, setKindFilter] = useState<AssignmentAssetKind | 'all'>('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [showLostModal, setShowLostModal] = useState(false);
+  const [showRevokeModal, setShowRevokeModal] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [returnCondition, setReturnCondition] = useState('');
+  const [returnRemarks, setReturnRemarks] = useState('');
+  const [lostRemarks, setLostRemarks] = useState('');
+  const [revokeRemarks, setRevokeRemarks] = useState('');
 
   const fetchAssignments = async () => {
     try {
@@ -51,39 +61,76 @@ export default function AssignmentsPage() {
   };
 
   const handleReturn = async (assignmentId: string) => {
+    setSelectedAssignmentId(assignmentId);
+    setShowReturnModal(true);
+  };
+
+  const confirmReturn = async () => {
+    if (!selectedAssignmentId) return;
     try {
-      await assetAssignmentsApi.return(assignmentId, {
-        conditionAtReturn: 'good',
-        returnRemarks: 'Returned via dashboard'
+      setActionLoading(true);
+      await assetAssignmentsApi.return(selectedAssignmentId, {
+        conditionAtReturn: returnCondition,
+        returnRemarks: returnRemarks,
       });
+      setShowReturnModal(false);
+      setReturnCondition('');
+      setReturnRemarks('');
+      setSelectedAssignmentId(null);
       fetchAssignments();
     } catch (err) {
       console.error('Failed to return assignment:', err);
       setError('Failed to return asset');
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleReportLost = async (assignmentId: string) => {
+    setSelectedAssignmentId(assignmentId);
+    setShowLostModal(true);
+  };
+
+  const confirmReportLost = async () => {
+    if (!selectedAssignmentId) return;
     try {
-      await assetAssignmentsApi.reportLost(assignmentId, {
-        remarks: 'Reported lost via dashboard'
+      setActionLoading(true);
+      await assetAssignmentsApi.reportLost(selectedAssignmentId, {
+        remarks: lostRemarks,
       });
+      setShowLostModal(false);
+      setLostRemarks('');
+      setSelectedAssignmentId(null);
       fetchAssignments();
     } catch (err) {
       console.error('Failed to report lost:', err);
       setError('Failed to report asset as lost');
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleRevoke = async (assignmentId: string) => {
+    setSelectedAssignmentId(assignmentId);
+    setShowRevokeModal(true);
+  };
+
+  const confirmRevoke = async () => {
+    if (!selectedAssignmentId) return;
     try {
-      await assetAssignmentsApi.revoke(assignmentId, {
-        revokeRemarks: 'Revoked via dashboard'
+      setActionLoading(true);
+      await assetAssignmentsApi.revoke(selectedAssignmentId, {
+        revokeRemarks: revokeRemarks,
       });
+      setShowRevokeModal(false);
+      setRevokeRemarks('');
+      setSelectedAssignmentId(null);
       fetchAssignments();
     } catch (err) {
       console.error('Failed to revoke assignment:', err);
       setError('Failed to revoke assignment');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -204,6 +251,9 @@ export default function AssignmentsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Status
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Image
+                  </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Actions
                   </th>
@@ -211,7 +261,7 @@ export default function AssignmentsPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {assignments.map((assignment,index) => (
-                  <tr key={assignment._id || `assignment-${index}`} className="hover:bg-accent/50">
+                  <tr key={assignment.id || `assignment-${index}`} className="hover:bg-accent/50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {assignment.asset && typeof assignment.asset === 'object' 
                         ? assignment.asset.name 
@@ -239,32 +289,44 @@ export default function AssignmentsPage() {
                         {assignment.status || 'active'}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {assignment.image ? (
+                        <span className="flex items-center gap-2 text-green-600">
+                          <ImageIcon className="size-4" />
+                          <span className="text-xs">Yes</span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">No</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => router.push(`/dashboard/assignments/${assignment._id}`)}
+                          onClick={() => router.push(`/dashboard/assignments/${assignment.id}`)}
                         >
                           <Eye className="size-4" />
                         </Button>
                         {assignment.status === 'active' && (
                           <>
+                            {assignment.assetKind === 'hardware' && (
+                              <PermissionGuard permission="assignments:update">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleReturn(assignment.id)}
+                                  title="Return Asset"
+                                >
+                                  <RotateCcw className="size-4" />
+                                </Button>
+                              </PermissionGuard>
+                            )}
                             <PermissionGuard permission="assignments:update">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleReturn(assignment._id)}
-                                title="Return Asset"
-                              >
-                                <RotateCcw className="size-4" />
-                              </Button>
-                            </PermissionGuard>
-                            <PermissionGuard permission="assignments:update">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleReportLost(assignment._id)}
+                                onClick={() => handleReportLost(assignment.id)}
                                 title="Report Lost"
                               >
                                 <AlertTriangle className="size-4 text-destructive" />
@@ -275,7 +337,7 @@ export default function AssignmentsPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleRevoke(assignment._id)}
+                                  onClick={() => handleRevoke(assignment.id)}
                                   title="Revoke License"
                                 >
                                   <Ban className="size-4 text-destructive" />
@@ -320,6 +382,38 @@ export default function AssignmentsPage() {
           </div>
         )}
       </div>
+
+      {/* Return Modal */}
+      <ReturnModal
+        isOpen={showReturnModal}
+        onClose={() => setShowReturnModal(false)}
+        onSubmit={confirmReturn}
+        loading={actionLoading}
+        condition={returnCondition}
+        onConditionChange={setReturnCondition}
+        remarks={returnRemarks}
+        onRemarksChange={setReturnRemarks}
+      />
+
+      {/* Lost Modal */}
+      <LostModal
+        isOpen={showLostModal}
+        onClose={() => setShowLostModal(false)}
+        onSubmit={confirmReportLost}
+        loading={actionLoading}
+        remarks={lostRemarks}
+        onRemarksChange={setLostRemarks}
+      />
+
+      {/* Revoke Modal */}
+      <RevokeModal
+        isOpen={showRevokeModal}
+        onClose={() => setShowRevokeModal(false)}
+        onSubmit={confirmRevoke}
+        loading={actionLoading}
+        remarks={revokeRemarks}
+        onRemarksChange={setRevokeRemarks}
+      />
     </div>
   );
 }
