@@ -6,6 +6,12 @@ export type AssetCategory = 'laptop' | 'desktop' | 'server' | 'networking_device
 export type AssetStatus = 'available' | 'assigned' | 'under_maintenance' | 'in_repair' | 'retired' | 'disposed' | 'lost';
 export type AssetCondition = 'new' | 'good' | 'fair' | 'damaged';
 
+export interface Barcode {
+  fileKey: string;
+  url: string;
+  generatedAt: string;
+}
+
 export interface Asset {
   id: string;
   assetTag: string;
@@ -26,6 +32,7 @@ export interface Asset {
   serialNumber?: string;
   condition?: AssetCondition;
   specifications?: Record<string, any>;
+  barcode?: Barcode;
   // License-specific
   licenseKey?: string;
   totalSeats?: number;
@@ -152,5 +159,10 @@ export const assetsApi = {
 
   delete: async (id: string): Promise<void> => {
     await axiosInstance.delete(`/assets/${id}`);
+  },
+
+  regenerateBarcode: async (id: string): Promise<Asset> => {
+    const response: ApiResponse<Asset> = await axiosInstance.post(`/assets/${id}/barcode/regenerate`);
+    return response.data;
   },
 };

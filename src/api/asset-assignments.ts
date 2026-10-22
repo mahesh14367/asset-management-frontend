@@ -4,6 +4,15 @@ import axiosInstance, { ApiResponse } from '../lib/axios';
 export type AssignmentStatus = 'active' | 'returned' | 'lost' | 'revoked';
 export type AssignmentAssetKind = 'hardware' | 'software_license';
 
+export interface AssignmentImage {
+  fileKey: string;
+  url: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+}
+
 export interface AssetAssignment {
   id: string;
   asset: string | { _id: string; name: string; assetTag: string };
@@ -12,6 +21,7 @@ export interface AssetAssignment {
   assignedDate: string;
   assignedBy: string;
   remarks: string;
+  image?: AssignmentImage;
   // Hardware-specific
   status?: AssignmentStatus;
   expectedReturnDate?: string;
@@ -42,6 +52,7 @@ export interface CreateAssignmentData {
   conditionAtAssignment?: string;
   remarks?: string;
   assetKind?: AssignmentAssetKind;
+  image?: File;
 }
 
 export interface ReturnAssignmentData {
@@ -79,6 +90,24 @@ export const assetAssignmentsApi = {
   },
 
   create: async (data: CreateAssignmentData): Promise<AssetAssignment> => {
+    // If image is provided, use FormData for multipart/form-data
+    if (data.image) {
+      const formData = new FormData();
+      formData.append('asset', data.asset);
+      formData.append('employee', data.employee);
+      if (data.expectedReturnDate) formData.append('expectedReturnDate', data.expectedReturnDate);
+      if (data.conditionAtAssignment) formData.append('conditionAtAssignment', data.conditionAtAssignment);
+      if (data.remarks) formData.append('remarks', data.remarks);
+      if (data.assetKind) formData.append('assetKind', data.assetKind);
+      formData.append('image', data.image);
+
+      const response: ApiResponse<AssetAssignment> = await axiosInstance.post('/asset-assignments', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    }
+
+    // Otherwise, use regular JSON
     const response: ApiResponse<AssetAssignment> = await axiosInstance.post('/asset-assignments', data);
     return response.data;
   },

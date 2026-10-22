@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/button';
-import { Plus, Search, Eye, RotateCcw, AlertTriangle, Ban } from 'lucide-react';
+import { Plus, Search, Eye, RotateCcw, AlertTriangle, Ban, Image as ImageIcon } from 'lucide-react';
 import { assetAssignmentsApi, AssetAssignment, AssignmentStatus, AssignmentAssetKind } from '../../../api/asset-assignments';
 import { usePermissions } from '../../../hooks/use-permissions';
 import { PermissionGuard } from '../../../components/auth/permission-guard';
@@ -251,6 +251,9 @@ export default function AssignmentsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Status
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Image
+                  </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Actions
                   </th>
@@ -285,6 +288,16 @@ export default function AssignmentsPage() {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(assignment.status || 'active')}`}>
                         {assignment.status || 'active'}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {assignment.image ? (
+                        <span className="flex items-center gap-2 text-green-600">
+                          <ImageIcon className="size-4" />
+                          <span className="text-xs">Yes</span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">No</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end gap-2">

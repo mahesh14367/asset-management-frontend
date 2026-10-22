@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '../../../../components/ui/button';
-import { ArrowLeft, Edit, Package, User, Calendar, MapPin, CheckCircle, AlertCircle, XCircle, RefreshCw, IdCard, Mail } from 'lucide-react';
+import { ArrowLeft, Edit, Package, User, Calendar, MapPin, CheckCircle, AlertCircle, XCircle, RefreshCw, IdCard, Mail, X } from 'lucide-react';
 import { assetAssignmentsApi, AssetAssignment, AssignmentStatus } from '../../../../api/asset-assignments';
 import { usePermissions } from '../../../../hooks/use-permissions';
 import { PermissionGuard } from '../../../../components/auth/permission-guard';
@@ -22,6 +22,7 @@ export default function AssignmentDetailsPage() {
   const [showLostModal, setShowLostModal] = useState(false);
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showImageDialog, setShowImageDialog] = useState(false);
 
   // Return form state
   const [returnCondition, setReturnCondition] = useState('');
@@ -209,6 +210,22 @@ export default function AssignmentDetailsPage() {
             </h2>
           </div>
           <div className="p-6 space-y-4">
+            {/* Asset Image */}
+            <div className="flex flex-col items-center gap-2 pb-4 border-b border-border">
+              <img
+                src={assignment.image?.url || 'https://via.placeholder.com/400x300?text=No+Image'}
+                alt={assignment.image?.originalName || 'Default asset image'}
+                className="max-w-full h-auto max-h-48 rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => setShowImageDialog(true)}
+              />
+              {assignment.image ? (
+                <p className="text-xs text-muted-foreground">
+                  Uploaded: {new Date(assignment.image.uploadedAt).toLocaleString()}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">No image uploaded</p>
+              )}
+            </div>
             <div className="flex items-start gap-3">
               <Package className="size-5 text-muted-foreground mt-0.5" />
               <div>
@@ -388,6 +405,28 @@ export default function AssignmentDetailsPage() {
         remarks={revokeRemarks}
         onRemarksChange={setRevokeRemarks}
       />
+
+      {/* Image Dialog */}
+      {showImageDialog && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowImageDialog(false)}>
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <img
+              src={assignment.image?.url || 'https://via.placeholder.com/400x300?text=No+Image'}
+              alt={assignment.image?.originalName || 'Asset image'}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute -top-4 -right-4 bg-white hover:bg-gray-100"
+              onClick={() => setShowImageDialog(false)}
+            >
+              <X className="size-6" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '../../../components/ui/button';
 import { ArrowLeft, Lock, CheckCircle2 } from 'lucide-react';
 import { authApi } from '../../../api';
+import { Suspense } from 'react';
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -152,5 +153,13 @@ export default function ResetPasswordPage() {
         </Button>
       </form>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="text-center">Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

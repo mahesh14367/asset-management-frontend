@@ -113,7 +113,7 @@ export default function NewMaintenancePage() {
             >
               <option value="">Select an asset</option>
               {assets.map((asset) => (
-                <option key={asset._id} value={asset._id}>
+                <option key={asset.id} value={asset.id}>
                   {asset.assetTag} - {asset.name}
                 </option>
               ))}

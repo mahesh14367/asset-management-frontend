@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '../../../../components/ui/button';
-import { ArrowLeft, Edit, Trash2, Package, Calendar, DollarSign, MapPin, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Package, Calendar, DollarSign, MapPin, AlertCircle, RefreshCw } from 'lucide-react';
 import { assetsApi, Asset, AssetStatus, AssetCondition } from '../../../../api/assets';
 import { usePermissions } from '../../../../hooks/use-permissions';
 import { PermissionGuard } from '../../../../components/auth/permission-guard';
@@ -22,6 +22,7 @@ export default function AssetDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [regeneratingBarcode, setRegeneratingBarcode] = useState(false);
 
   useEffect(() => {
     fetchAsset();
@@ -55,6 +56,19 @@ export default function AssetDetailsPage() {
     } catch (err) {
       console.error('Failed to delete asset:', err);
       setError('Failed to delete asset');
+    }
+  };
+
+  const handleRegenerateBarcode = async () => {
+    try {
+      setRegeneratingBarcode(true);
+      const updatedAsset = await assetsApi.regenerateBarcode(assetId);
+      setAsset(updatedAsset);
+    } catch (err) {
+      console.error('Failed to regenerate barcode:', err);
+      setError('Failed to regenerate barcode');
+    } finally {
+      setRegeneratingBarcode(false);
     }
   };
 
@@ -160,6 +174,54 @@ export default function AssetDetailsPage() {
           </span>
         )}
       </div>
+
+      {/* Barcode Section */}
+      {asset.assetKind === 'hardware' && (
+        <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Barcode</h3>
+            <PermissionGuard permission="assets:update">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRegenerateBarcode}
+                disabled={regeneratingBarcode}
+              >
+                <RefreshCw className={`mr-2 size-4 ${regeneratingBarcode ? 'animate-spin' : ''}`} />
+                {regeneratingBarcode ? 'Regenerating...' : 'Regenerate Barcode'}
+              </Button>
+            </PermissionGuard>
+          </div>
+          {asset.barcode ? (
+            <div className="flex flex-col items-center gap-4">
+              <img
+                src={asset.barcode.url}
+                alt={`Barcode for ${asset.assetTag}`}
+                className="max-w-full h-auto border border-border rounded bg-white p-4"
+              />
+              <div className="text-sm text-muted-foreground">
+                <p>Generated: {new Date(asset.barcode.generatedAt).toLocaleString()}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No barcode generated yet</p>
+              <PermissionGuard permission="assets:update">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRegenerateBarcode}
+                  disabled={regeneratingBarcode}
+                  className="mt-2"
+                >
+                  <RefreshCw className={`mr-2 size-4 ${regeneratingBarcode ? 'animate-spin' : ''}`} />
+                  Generate Barcode
+                </Button>
+              </PermissionGuard>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Asset Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
